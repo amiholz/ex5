@@ -113,9 +113,10 @@ def MDS(X, d):
     H = np.eye(N) - (1/N)*np.ones((N,N))
     S = -0.5*np.matmul(H, np.matmul(X, H))
     eig_val, eig_vec= np.linalg.eigh(S)
-    reverse_eig_val = np.flip(eig_val, axis=0)
-    reverse_eig_vec = np.flip(eig_vec,axis=1)
-    return reverse_eig_vec[:,:d]*np.sqrt(reverse_eig_val[:d])
+    reverse_eig_val = np.flip(eig_val, axis=0)[:d]
+    reverse_eig_vec = np.flip(eig_vec, axis=1)[:,:d]
+    return reverse_eig_vec*np.sqrt(reverse_eig_val)
+
 
 def LLE(X, d, k):
     '''
@@ -130,11 +131,11 @@ def LLE(X, d, k):
     knn = kneighbors_graph(X, k).toarray()
     W = np.zeros((knn.shape))
     for i in range(W.shape[0]):
-        Z = X[np.where(knn[i]==1)[0],:]
+        Z = X[np.where(knn[i]==1)[0]]
         Z = Z-X[i]
         G = np.inner(Z,Z)
         w = np.linalg.pinv(G).dot(np.ones(G.shape[0]))
-        W[i,np.where(knn[i,:]==1)] = w/np.sum(w)
+        W[i,np.where(knn[i]==1)] = w/np.sum(w)
     M = np.eye(W.shape[0]) - W
     eig_val, eig_vec= np.linalg.eigh(np.matmul(M.T,M))
     return eig_vec[:,1:d+1]
@@ -158,6 +159,7 @@ def DiffusionMap(X, d, sigma, t):
     reverse_eig_vec = np.flip(eig_vec,axis=1)[:,1:d+1]
     return reverse_eig_vec*np.power(reverse_eig_val, t)
 
+
 def MNIST(digits_data, digits_labels):
     # calculate distance matrix
     X = euclidean_distances(digits_data, squared=True)
@@ -166,15 +168,15 @@ def MNIST(digits_data, digits_labels):
     # X_MDS = MDS(X, d)
 
     # PART II - LLE
-    # K = [5, 10, 50, 100]
-    # X_LLE = []
-    # for k in K:
-    #     result = LLE(digits_data, d, k)
-    #     X_LLE.append(result)
+    K = [5, 10, 50, 100]
+    X_LLE = []
+    for k in K:
+        result = LLE(digits_data, d, k)
+        X_LLE.append(result)
 
     # PART III - DM
     sigma = 1
-    T = [5,10,50]
+    T = [2,20]
     X_DM = []
     for t in T:
         result = DiffusionMap(digits_data, d, sigma, t)
