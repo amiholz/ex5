@@ -2,10 +2,12 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import datasets
-from sklearn.neighbors import kneighbors_graph
+
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import euclidean_distances
-from scipy.spatial import distance_matrix
+from scipy.spatial.distance import pdist, squareform
+
+save = False
 
 def digits_example():
     '''
@@ -100,6 +102,22 @@ def plot_with_images(X, images, title, image_num=25):
 
     return fig
 
+def eig_decomposition(mat, descending=False):
+    """
+    Decompose the given matrix to its eigenvalues and eigenvectors
+    and return them sorted
+
+    :param mat: size (N, N) input matrix to decompose
+    :param descending: set to True for descending order (largest to smallest)
+    :return: (N,) array of sorted eigenvalues, and their (N, N) eigen vectors
+    """
+    eig_values, eig_vectors = np.linalg.eigh(mat)
+    sorted_indices = eig_values.argsort()
+    if descending is True:
+        sorted_indices = np.flip(sorted_indices, axis=0)
+    return eig_values[sorted_indices], eig_vectors[:, sorted_indices]
+
+
 def MDS(X, d):
     '''
     Given a NxN pairwise distance matrix and the number of desired dimensions,
@@ -110,13 +128,12 @@ def MDS(X, d):
     :return: Nxd reduced data point matrix.
     '''
     N = X.shape[0]
-    H = np.eye(N) - (1/N)*np.ones((N,N))
+    H = np.eye(N) - np.ones((N,N))/N
     S = -0.5*np.matmul(H, np.matmul(X, H))
     eig_val, eig_vec= np.linalg.eigh(S)
     reverse_eig_val = np.flip(eig_val, axis=0)[:d]
     reverse_eig_vec = np.flip(eig_vec, axis=1)[:,:d]
     return reverse_eig_vec*np.sqrt(reverse_eig_val), eig_val
-
 
 def LLE(X, d, k):
     '''
@@ -128,14 +145,14 @@ def LLE(X, d, k):
     :param k: the number of neighbors for the weight extraction.
     :return: Nxd reduced data matrix.
     '''
-    knn = kneighbors_graph(X, k).toarray()
-    W = np.zeros((knn.shape))
+    knn = np.argsort(euclidean_distances(X), axis=1)[:,1:k+1]
+    W = np.zeros((knn.shape[0], knn.shape[0]))
     for i in range(W.shape[0]):
-        Z = X[np.where(knn[i]==1)[0]]
+        Z = X[knn[i]]
         Z = Z-X[i]
         G = np.inner(Z,Z)
         w = np.linalg.pinv(G).dot(np.ones(G.shape[0]))
-        W[i,np.where(knn[i]==1)] = w/np.sum(w)
+        W[i,knn[i]] = w/np.sum(w)
 
     M = np.eye(W.shape[0]) - W
     eig_val, eig_vec= np.linalg.eigh(np.matmul(M.T,M))
@@ -167,9 +184,9 @@ def points_display(data, labels, title, save=True):
     if save: plt.savefig(title)
     plt.show()
 
-def MNIST(digits_data, digits_labels):
 
-    save = True
+
+def MNIST(digits_data, digits_labels):
     # Distance matrix and dimension
     d = 2
     X = euclidean_distances(digits_data, squared=True)
@@ -184,34 +201,32 @@ def MNIST(digits_data, digits_labels):
     plt.figure()
     plt.suptitle(LLE_title)
     for k in range(len(K)):
-        # data1 = LLE1(digits_data, d, K[k])
         data = LLE(digits_data, d, K[k])
         plt.subplot(1,len(K),k+1)
         plt.title("k="+str(K[k]) , fontsize=15)
+        axis=np.min(data[:,0]),np.max(data[:,0]),np.min(data[:,1]),np.max(data[:,1])
+        plt.axis(axis)
         plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
     if save: plt.savefig(LLE_title)
     plt.show()
 
     # PART III - DM
-    S = [0.5,2,10]
-    T = [2,20]
+    T = [1, 20, 100]
     DM_title = "MNIST - Diffusion Maps"
     plt.figure()
     plt.suptitle(DM_title, fontsize=15)
-    count=1
     for t in range(len(T)):
-        for s in range(len(S)):
-            data = DiffusionMap(digits_data, d, S[s], T[t])
-            plt.subplot(len(T),len(S),count)
-            count+=1
-            plt.title("t="+str(T[t])+" S="+str(S[s]) , fontsize=10)
-            plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
+        data = DiffusionMap(digits_data, d, 50, T[t])
+        plt.subplot(1, len(T),t+1)
+        plt.title("t="+str(T[t])+" S=50" , fontsize=10)
+        axis=np.min(data[:,0]),np.max(data[:,0]),np.min(data[:,1]),np.max(data[:,1])
+        plt.axis(axis)
+        plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
     if save: plt.savefig(DM_title)
     plt.show()
 
 def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
 
-    save = True
     # Distance matrix and dimension
     d = 2
     X = euclidean_distances(swiss_roll_data, squared=True)
@@ -226,28 +241,26 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
     plt.figure()
     plt.suptitle(LLE_title)
     for k in range(len(K)):
-        # data1 = LLE1(digits_data, d, K[k])
         data = LLE(swiss_roll_data, d, K[k])
         plt.subplot(1,len(K),k+1)
         plt.title("k="+str(K[k]) , fontsize=15)
+        axis=np.min(data[:,0]),np.max(data[:,0]),np.min(data[:,1]),np.max(data[:,1])
+        plt.axis(axis)
         plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="gist_rainbow")
     if save: plt.savefig(LLE_title)
     plt.show()
 
     # PART III - DM
-    S = [0.5,7]
-    T = [2,20]
+    S = [1,5,9]
     DM_title = "Swiss Rol - Diffusion Maps"
     plt.figure()
-    plt.suptitle(DM_title, fontsize=15)
-    count=1
-    for t in range(len(T)):
-        for s in range(len(S)):
-            data = DiffusionMap(swiss_roll_data, d, S[s], T[t])
-            plt.subplot(len(T),len(S),count)
-            count+=1
-            plt.title("t="+str(T[t])+" S="+str(S[s]) , fontsize=10)
-            plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="gist_rainbow")
+    for s in range(len(S)):
+        data = DiffusionMap(swiss_roll_data, d, S[s], 2)
+        plt.subplot(1,len(S),s+1)
+        plt.title("T=2"+" S="+str(S[s]) , fontsize=10)
+        axis=np.min(data[:,0]),np.max(data[:,0]),np.min(data[:,1]),np.max(data[:,1])
+        plt.axis(axis)
+        plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="gist_rainbow")
     if save: plt.savefig(DM_title)
     plt.show()
 
@@ -258,12 +271,13 @@ def Faces(faces_data):
     X = euclidean_distances(faces_data, squared=True)
 
     # PART I - MDS
-    plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 50)
+    plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 70)
+    plt.show()
 
     # PART II - LLE
     K = [5, 50, 100]
     for k in range(len(K)):
-        plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE", 50)
+        plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE", 70)
     plt.gray()
     plt.show()
 
@@ -276,36 +290,55 @@ def Faces(faces_data):
     plt.gray()
     plt.show()
 
+def random_rotation_matrix(d, loc=0.0, scale=0.1):
+    '''
+    Generate a uniformly random rotation matrix
+
+    :param loc: mean of the distribution.
+    :param scale: std of the distribution.
+    :param d: the dimension.
+    :return:
+    '''
+    rnd = np.random.normal(loc=loc, scale=scale, size=[d, d])
+    q, _ = np.linalg.qr(rnd)
+
+    return q
+
 def scree(sd = 1):
-    mu, sigma = (3, 5), np.array([[40, -6], [-6, 3]])
-    noise_sigma_values = [0.5, 2, 5, 10]
-    high_dim = 10
-    n_samples = 100
-    # create Gaussian data with some fixed mean and variance
-    # and embed it in higher dimension
-    data_2d = np_random.multivariate_normal(mu, sigma, size=n_samples).T
-    rotation_mat = np_random.normal(size=(high_dim, 2))
-    rotation_mat, _ = np.linalg.qr(rotation_mat)
-    data_embedded = (rotation_mat @ data_2d).T
+    # mu, sigma = (3, 5), np.array([[40, -6], [-6, 3]])
+    # noise_sigma_values = [0.5, 2, 5, 10]
+    # high_dim = 10
+    # n_samples = 100
+    # # create Gaussian data with some fixed mean and variance
+    # # and embed it in higher dimension
+    # data_2d = np.random.multivariate_normal(mu, sigma, size=n_samples).T
+    # rotation_mat = np.random.normal(size=(high_dim, 2))
+    # rotation_mat, _ = np.linalg.qr(rotation_mat)
+    # data_embedded = (np.matmul(rotation_mat,data_2d)).T
 
 
-    D=10
-    N=500
-    data2D = np.zeros((N, D))
-    data2D[:2,:] = np.random.normal(size=(2, D))
+    n = 50
+    intrinsic_d = 2
+    ambient_d = 5
+    data = np.random.random([n, intrinsic_d]) * 10
+    # extend to ambient_d dimensions
+    data_extended = np.append(data, np.zeros([n, ambient_d - intrinsic_d]), axis=1)
+    # randomly rotate
+    rot = random_rotation_matrix(ambient_d)
+    rotated_data = np.dot(data_extended, rot)
 
-    Q = np.linalg.qr(np.random.normal(size=(N, N)))[0]
-    dataHD = np.matmul(Q,data2D)
+    # try different noises
+    for i, scale in enumerate([0.1, 0.2, 0.5, 1, 1.5, 2, 4, 7, 10]):
+        plt.subplot(3, 3, i+1)
+        plt.title('noise std=' + str(scale))
+        plt.xlabel('eigenvalue id')
+        plt.ylabel('eigenvalue')
+        # add gaussian noise
+        noisy_data = rotated_data + np.random.normal(scale=scale, size=rotated_data.shape)
+        distances = squareform(pdist(noisy_data))
+        _, w = MDS(distances, intrinsic_d)
+        plt.scatter(range(len(w)), w)
 
-    dataHDnoise = np.random.normal(size=(N, D), scale=sd)
-
-    data = dataHD + dataHDnoise
-
-    X = euclidean_distances(data, squared=True)
-
-    eig_val = MDS(X, 2)[1][1:]
-
-    plt.plot(np.arange(len(eig_val)), eig_val)
     plt.show()
 
 if __name__ == '__main__':
@@ -319,10 +352,10 @@ if __name__ == '__main__':
     # SWISS_ROLL
     swiss_roll_data, swiss_roll_labels = datasets.samples_generator.make_swiss_roll(n_samples=5000)
     # FACES
-    # with open("faces.pickle", 'rb') as f:
-    #     faces_data = pickle.load(f)
+    with open("faces.pickle", 'rb') as f:
+        faces_data = pickle.load(f)
 
-    # MNIST(digits_data, digits_labels)
-    # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
-    # Faces(faces_data)
-    scree(0)
+    MNIST(digits_data, digits_labels)
+    Swiss_Roll(swiss_roll_data, swiss_roll_labels)
+    Faces(faces_data)
+    # scree(0)
