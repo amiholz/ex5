@@ -19,8 +19,8 @@ def digits_example():
 
     # plot examples:
     plt.gray()
-    for i in range(10):
-        plt.subplot(2, 5, i+1)
+    for i in range(3):
+        plt.subplot(1, 3, i+1)
         plt.axis('off')
         plt.imshow(np.reshape(data[i, :], (8, 8)))
         plt.title("Digit " + str(labels[i]))
@@ -159,13 +159,23 @@ def DiffusionMap(X, d, sigma, t):
     reverse_eig_vec = np.flip(eig_vec,axis=1)[:,1:d+1]
     return reverse_eig_vec*np.power(reverse_eig_val, t)
 
+def display_and_save_with_labels(data, labels, title, save=True):
+    plt.figure()
+    MDS_title = "MDS - MNIST"
+    plt.title(MDS_title, fontsize=20)
+    plt.scatter(X_MDS[:,0], X_MDS[:,1], c=digits_labels, cmap="gist_rainbow")
+    plt.savefig(MDS_title)
+    plt.show()
 
 def MNIST(digits_data, digits_labels):
-    # calculate distance matrix
-    X = euclidean_distances(digits_data, squared=True)
+
+    # Distance matrix and dimension
     d = 2
+    X = euclidean_distances(digits_data, squared=True)
+
     # PART I - MDS
-    # X_MDS = MDS(X, d)
+    X_MDS = MDS(X, d)
+    display_and_save_with_labels(X_MDS, digits_labels, "MDS - MNIST")
 
     # PART II - LLE
     K = [5, 10, 50, 100]
@@ -175,13 +185,21 @@ def MNIST(digits_data, digits_labels):
         X_LLE.append(result)
 
     # PART III - DM
-    sigma = 1
+    sigma = [0.5,2,10]
     T = [2,20]
     X_DM = []
     for t in T:
-        result = DiffusionMap(digits_data, d, sigma, t)
-        X_DM.append(result)
+        for s in sigma:
+            result = DiffusionMap(digits_data, d, s, t)
+            X_DM.append(result)
 
+
+
+def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
+    pass
+
+def Faces(faces_data):
+    pass
 
 if __name__ == '__main__':
     '''
@@ -197,5 +215,6 @@ if __name__ == '__main__':
     # with open("faces.pickle", 'rb') as f:
     #     faces_data = pickle.load(f)
 
-
     MNIST(digits_data, digits_labels)
+    # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
+    # Faces(faces_data)
