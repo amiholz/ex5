@@ -190,7 +190,6 @@ def MNIST(digits_data, digits_labels):
     if save: plt.savefig(LLE_title)
     plt.show()
 
-
     # PART III - DM
     T = [1, 20, 100]
     DM_title = "MNIST - Diffusion Maps"
