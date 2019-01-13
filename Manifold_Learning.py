@@ -6,7 +6,6 @@ from sklearn.neighbors import kneighbors_graph
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import euclidean_distances
 
-
 def digits_example():
     '''
     Example code to show you how to load the MNIST data and plot it.
@@ -194,10 +193,5 @@ if __name__ == '__main__':
     with open("faces.pickle", 'rb') as f:
         faces_data = pickle.load(f)
 
-    K = np.arange(12).reshape((4,3))
-    print(K)
-
-    K =K/K.sum(axis=1)[:, np.newaxis]
-    print(K)
 
     # MNIST(digits_data, digits_labels)
