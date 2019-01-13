@@ -115,7 +115,7 @@ def MDS(X, d):
     eig_val, eig_vec= np.linalg.eigh(S)
     reverse_eig_val = np.flip(eig_val, axis=0)[:d]
     reverse_eig_vec = np.flip(eig_vec, axis=1)[:,:d]
-    return reverse_eig_vec*np.sqrt(reverse_eig_val)
+    return reverse_eig_vec*np.sqrt(reverse_eig_val), eig_val
 
 
 def LLE(X, d, k):
@@ -175,7 +175,7 @@ def MNIST(digits_data, digits_labels):
     X = euclidean_distances(digits_data, squared=True)
 
     # PART I - MDS
-    X_MDS = MDS(X, d)
+    X_MDS = MDS(X, d)[0]
     points_display(X_MDS, digits_labels, "MNIST - MDS", save)
 
     # PART II - LLE
@@ -210,25 +210,27 @@ def MNIST(digits_data, digits_labels):
     plt.show()
 
 def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
+
+    save = True
     # Distance matrix and dimension
     d = 2
-    X = euclidean_distances(digits_data, squared=True)
+    X = euclidean_distances(swiss_roll_data, squared=True)
 
     # PART I - MDS
-    X_MDS = MDS(X, d)
-    points_display(X_MDS, digits_labels, "Swiss Rol - MDS", save)
+    X_MDS = MDS(X, d)[0]
+    points_display(X_MDS, swiss_roll_labels, "Swiss Rol - MDS", save)
 
     # PART II - LLE
-    K = [5, 50, 100, 200]
+    K = [5, 50, 100]
     LLE_title = "Swiss Rol - LLE"
     plt.figure()
     plt.suptitle(LLE_title)
     for k in range(len(K)):
         # data1 = LLE1(digits_data, d, K[k])
-        data = LLE(digits_data, d, K[k])
+        data = LLE(swiss_roll_data, d, K[k])
         plt.subplot(1,len(K),k+1)
         plt.title("k="+str(K[k]) , fontsize=15)
-        plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
+        plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="gist_rainbow")
     if save: plt.savefig(LLE_title)
     plt.show()
 
@@ -241,16 +243,70 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
     count=1
     for t in range(len(T)):
         for s in range(len(S)):
-            data = DiffusionMap(digits_data, d, S[s], T[t])
+            data = DiffusionMap(swiss_roll_data, d, S[s], T[t])
             plt.subplot(len(T),len(S),count)
             count+=1
             plt.title("t="+str(T[t])+" S="+str(S[s]) , fontsize=10)
-            plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
+            plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="gist_rainbow")
     if save: plt.savefig(DM_title)
     plt.show()
 
 def Faces(faces_data):
-    pass
+    save = True
+    # Distance matrix and dimension
+    d = 2
+    X = euclidean_distances(faces_data, squared=True)
+
+    # PART I - MDS
+    plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 50)
+
+    # PART II - LLE
+    K = [5, 50, 100]
+    for k in range(len(K)):
+        plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE", 50)
+    plt.gray()
+    plt.show()
+
+    # PART III - DM
+    S = [40,70]
+    T = [2,20]
+    for t in range(len(T)):
+        for s in range(len(S)):
+            plot_with_images(DiffusionMap(X, d, S[s], T[t]), faces_data, "Faces - MDS", 50)
+    plt.gray()
+    plt.show()
+
+def scree(sd = 1):
+    mu, sigma = (3, 5), np.array([[40, -6], [-6, 3]])
+    noise_sigma_values = [0.5, 2, 5, 10]
+    high_dim = 10
+    n_samples = 100
+    # create Gaussian data with some fixed mean and variance
+    # and embed it in higher dimension
+    data_2d = np_random.multivariate_normal(mu, sigma, size=n_samples).T
+    rotation_mat = np_random.normal(size=(high_dim, 2))
+    rotation_mat, _ = np.linalg.qr(rotation_mat)
+    data_embedded = (rotation_mat @ data_2d).T
+
+
+    D=10
+    N=500
+    data2D = np.zeros((N, D))
+    data2D[:2,:] = np.random.normal(size=(2, D))
+
+    Q = np.linalg.qr(np.random.normal(size=(N, N)))[0]
+    dataHD = np.matmul(Q,data2D)
+
+    dataHDnoise = np.random.normal(size=(N, D), scale=sd)
+
+    data = dataHD + dataHDnoise
+
+    X = euclidean_distances(data, squared=True)
+
+    eig_val = MDS(X, 2)[1][1:]
+
+    plt.plot(np.arange(len(eig_val)), eig_val)
+    plt.show()
 
 if __name__ == '__main__':
     '''
@@ -267,5 +323,6 @@ if __name__ == '__main__':
     #     faces_data = pickle.load(f)
 
     # MNIST(digits_data, digits_labels)
-    Swiss_Roll(swiss_roll_data, swiss_roll_labels)
+    # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
     # Faces(faces_data)
+    scree(0)
