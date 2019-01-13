@@ -136,6 +136,7 @@ def LLE(X, d, k):
         G = np.inner(Z,Z)
         w = np.linalg.pinv(G).dot(np.ones(G.shape[0]))
         W[i,np.where(knn[i]==1)] = w/np.sum(w)
+
     M = np.eye(W.shape[0]) - W
     eig_val, eig_vec= np.linalg.eigh(np.matmul(M.T,M))
     return eig_vec[:,1:d+1]
@@ -159,44 +160,94 @@ def DiffusionMap(X, d, sigma, t):
     reverse_eig_vec = np.flip(eig_vec,axis=1)[:,1:d+1]
     return reverse_eig_vec*np.power(reverse_eig_val, t)
 
-def display_and_save_with_labels(data, labels, title, save=True):
+def points_display(data, labels, title, save=True):
     plt.figure()
-    MDS_title = "MDS - MNIST"
-    plt.title(MDS_title, fontsize=20)
-    plt.scatter(X_MDS[:,0], X_MDS[:,1], c=digits_labels, cmap="gist_rainbow")
-    plt.savefig(MDS_title)
+    plt.title(title, fontsize=20)
+    plt.scatter(data[:,0], data[:,1], c=labels, cmap="gist_rainbow")
+    if save: plt.savefig(title)
     plt.show()
 
 def MNIST(digits_data, digits_labels):
 
+    save = True
     # Distance matrix and dimension
     d = 2
     X = euclidean_distances(digits_data, squared=True)
 
     # PART I - MDS
     X_MDS = MDS(X, d)
-    display_and_save_with_labels(X_MDS, digits_labels, "MDS - MNIST")
+    points_display(X_MDS, digits_labels, "MNIST - MDS", save)
 
     # PART II - LLE
-    K = [5, 10, 50, 100]
-    X_LLE = []
-    for k in K:
-        result = LLE(digits_data, d, k)
-        X_LLE.append(result)
+    K = [5, 50, 100, 200]
+    LLE_title = "MNIST - LLE"
+    plt.figure()
+    plt.suptitle(LLE_title)
+    for k in range(len(K)):
+        # data1 = LLE1(digits_data, d, K[k])
+        data = LLE(digits_data, d, K[k])
+        plt.subplot(1,len(K),k+1)
+        plt.title("k="+str(K[k]) , fontsize=15)
+        plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
+    if save: plt.savefig(LLE_title)
+    plt.show()
 
     # PART III - DM
-    sigma = [0.5,2,10]
+    S = [0.5,2,10]
     T = [2,20]
-    X_DM = []
-    for t in T:
-        for s in sigma:
-            result = DiffusionMap(digits_data, d, s, t)
-            X_DM.append(result)
-
-
+    DM_title = "MNIST - Diffusion Maps"
+    plt.figure()
+    plt.suptitle(DM_title, fontsize=15)
+    count=1
+    for t in range(len(T)):
+        for s in range(len(S)):
+            data = DiffusionMap(digits_data, d, S[s], T[t])
+            plt.subplot(len(T),len(S),count)
+            count+=1
+            plt.title("t="+str(T[t])+" S="+str(S[s]) , fontsize=10)
+            plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
+    if save: plt.savefig(DM_title)
+    plt.show()
 
 def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
-    pass
+    # Distance matrix and dimension
+    d = 2
+    X = euclidean_distances(digits_data, squared=True)
+
+    # PART I - MDS
+    X_MDS = MDS(X, d)
+    points_display(X_MDS, digits_labels, "Swiss Rol - MDS", save)
+
+    # PART II - LLE
+    K = [5, 50, 100, 200]
+    LLE_title = "Swiss Rol - LLE"
+    plt.figure()
+    plt.suptitle(LLE_title)
+    for k in range(len(K)):
+        # data1 = LLE1(digits_data, d, K[k])
+        data = LLE(digits_data, d, K[k])
+        plt.subplot(1,len(K),k+1)
+        plt.title("k="+str(K[k]) , fontsize=15)
+        plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
+    if save: plt.savefig(LLE_title)
+    plt.show()
+
+    # PART III - DM
+    S = [0.5,7]
+    T = [2,20]
+    DM_title = "Swiss Rol - Diffusion Maps"
+    plt.figure()
+    plt.suptitle(DM_title, fontsize=15)
+    count=1
+    for t in range(len(T)):
+        for s in range(len(S)):
+            data = DiffusionMap(digits_data, d, S[s], T[t])
+            plt.subplot(len(T),len(S),count)
+            count+=1
+            plt.title("t="+str(T[t])+" S="+str(S[s]) , fontsize=10)
+            plt.scatter(data[:, 0], data[:, 1], c=digits_labels, cmap="gist_rainbow")
+    if save: plt.savefig(DM_title)
+    plt.show()
 
 def Faces(faces_data):
     pass
@@ -215,6 +266,6 @@ if __name__ == '__main__':
     # with open("faces.pickle", 'rb') as f:
     #     faces_data = pickle.load(f)
 
-    MNIST(digits_data, digits_labels)
-    # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
+    # MNIST(digits_data, digits_labels)
+    Swiss_Roll(swiss_roll_data, swiss_roll_labels)
     # Faces(faces_data)
