@@ -5,6 +5,7 @@ from sklearn import datasets
 from sklearn.neighbors import kneighbors_graph
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import euclidean_distances
+from scipy.spatial import distance_matrix
 
 def digits_example():
     '''
@@ -112,7 +113,7 @@ def MDS(X, d):
     H = np.eye(N) - (1/N)*np.ones((N,N))
     S = -0.5*np.matmul(H, np.matmul(X, H))
     eig_val, eig_vec= np.linalg.eigh(S)
-    reverse_eig_val = np.flip(eig_val)
+    reverse_eig_val = np.flip(eig_val, axis=0)
     reverse_eig_vec = np.flip(eig_vec,axis=1)
     return reverse_eig_vec[:,:d]*np.sqrt(reverse_eig_val[:d])
 
@@ -151,24 +152,25 @@ def DiffusionMap(X, d, sigma, t):
     :return: Nxd reduced data matrix.
     '''
     K = np.exp(-(euclidean_distances(X, X)**2)/(sigma))
-    K = K/K.sum(axis=1)[:, np.newaxis]
-    eig_val, eig_vec= np.linalg.eigh(K)
-
-
+    A = K/K.sum(axis=1)[:, np.newaxis]
+    eig_val, eig_vec= np.linalg.eigh(A)
+    reverse_eig_val = np.flip(eig_val, axis=0)[1:d+1]
+    reverse_eig_vec = np.flip(eig_vec,axis=1)[:,1:d+1]
+    return reverse_eig_vec*np.power(reverse_eig_val, t)
 
 def MNIST(digits_data, digits_labels):
     # calculate distance matrix
     X = euclidean_distances(digits_data, squared=True)
     d = 2
     # PART I - MDS
-    X_MDS = MDS(X, d)
+    # X_MDS = MDS(X, d)
 
     # PART II - LLE
-    K = [5, 10, 50, 100]
-    X_LLE = []
-    for k in K:
-        result = LLE(digits_data, d, k)
-        X_LLE.append(result)
+    # K = [5, 10, 50, 100]
+    # X_LLE = []
+    # for k in K:
+    #     result = LLE(digits_data, d, k)
+    #     X_LLE.append(result)
 
     # PART III - DM
     sigma = 1
@@ -190,8 +192,8 @@ if __name__ == '__main__':
     # SWISS_ROLL
     swiss_roll_data, swiss_roll_labels = datasets.samples_generator.make_swiss_roll(n_samples=5000)
     # FACES
-    with open("faces.pickle", 'rb') as f:
-        faces_data = pickle.load(f)
+    # with open("faces.pickle", 'rb') as f:
+    #     faces_data = pickle.load(f)
 
 
-    # MNIST(digits_data, digits_labels)
+    MNIST(digits_data, digits_labels)
