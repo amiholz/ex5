@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import euclidean_distances
 from scipy.spatial.distance import pdist, squareform
 
-save = True
+save = False
 
 def digits_example():
     '''
@@ -42,6 +42,7 @@ def swiss_roll_example():
     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
     plt.show()
 
+
 def faces_example(path):
     '''
     Example code to show you how to load the faces data.
@@ -61,6 +62,7 @@ def faces_example(path):
         plt.subplot(2, 2, i+1)
         plt.imshow(np.reshape(X[i, :], (d, d)))
     plt.show()
+
 
 def plot_with_images(X, images, title, image_num=25):
     '''
@@ -99,6 +101,22 @@ def plot_with_images(X, images, title, image_num=25):
     ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7)
 
     return fig
+
+def eig_decomposition(mat, descending=False):
+    """
+    Decompose the given matrix to its eigenvalues and eigenvectors
+    and return them sorted
+
+    :param mat: size (N, N) input matrix to decompose
+    :param descending: set to True for descending order (largest to smallest)
+    :return: (N,) array of sorted eigenvalues, and their (N, N) eigen vectors
+    """
+    eig_values, eig_vectors = np.linalg.eigh(mat)
+    sorted_indices = eig_values.argsort()
+    if descending is True:
+        sorted_indices = np.flip(sorted_indices, axis=0)
+    return eig_values[sorted_indices], eig_vectors[:, sorted_indices]
+
 
 def MDS(X, d):
     '''
@@ -165,6 +183,8 @@ def points_display(data, labels, title, save=True):
     plt.scatter(data[:,0], data[:,1], c=labels, cmap="gist_rainbow")
     if save: plt.savefig(title)
     plt.show()
+
+
 
 def MNIST(digits_data, digits_labels):
     # Distance matrix and dimension
@@ -245,6 +265,7 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
     plt.show()
 
 def Faces(faces_data):
+    save = True
     # Distance matrix and dimension
     d = 2
     X = euclidean_distances(faces_data, squared=True)
@@ -253,25 +274,70 @@ def Faces(faces_data):
     plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 70)
     plt.show()
 
-
     # PART II - LLE
-    K = [10, 70, 150]
+    K = [5, 50, 100]
     for k in range(len(K)):
-        plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE, k="+str(K[k]), 70)
+        plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE", 70)
+    plt.gray()
     plt.show()
 
     # PART III - DM
-    S = [40,70,100, 150]
-    T = [2]
+    S = [40,70]
+    T = [2,20]
     for t in range(len(T)):
         for s in range(len(S)):
-            result = DiffusionMap(faces_data, d, S[s], T[t])
-            plot_with_images(result, faces_data, "Faces - DM, s="+str(S[s])+" t="+str(T[t]), 70)
+            plot_with_images(DiffusionMap(X, d, S[s], T[t]), faces_data, "Faces - MDS", 50)
+    plt.gray()
     plt.show()
 
+def random_rotation_matrix(d, loc=0.0, scale=0.1):
+    '''
+    Generate a uniformly random rotation matrix
+
+    :param loc: mean of the distribution.
+    :param scale: std of the distribution.
+    :param d: the dimension.
+    :return:
+    '''
+    rnd = np.random.normal(loc=loc, scale=scale, size=[d, d])
+    q, _ = np.linalg.qr(rnd)
+
+    return q
 
 def scree(sd = 1):
-    pass
+    # mu, sigma = (3, 5), np.array([[40, -6], [-6, 3]])
+    # noise_sigma_values = [0.5, 2, 5, 10]
+    # high_dim = 10
+    # n_samples = 100
+    # # create Gaussian data with some fixed mean and variance
+    # # and embed it in higher dimension
+    # data_2d = np.random.multivariate_normal(mu, sigma, size=n_samples).T
+    # rotation_mat = np.random.normal(size=(high_dim, 2))
+    # rotation_mat, _ = np.linalg.qr(rotation_mat)
+    # data_embedded = (np.matmul(rotation_mat,data_2d)).T
+
+
+    n = 50
+    intrinsic_d = 2
+    ambient_d = 5
+    data = np.random.random([n, intrinsic_d]) * 10
+    # extend to ambient_d dimensions
+    data_extended = np.append(data, np.zeros([n, ambient_d - intrinsic_d]), axis=1)
+    # randomly rotate
+    rot = random_rotation_matrix(ambient_d)
+    rotated_data = np.dot(data_extended, rot)
+
+    # try different noises
+    for i, scale in enumerate([0.1, 0.2, 0.5, 1, 1.5, 2, 4, 7, 10]):
+        plt.subplot(3, 3, i+1)
+        plt.title('noise std=' + str(scale))
+        plt.xlabel('eigenvalue id')
+        plt.ylabel('eigenvalue')
+        # add gaussian noise
+        noisy_data = rotated_data + np.random.normal(scale=scale, size=rotated_data.shape)
+        distances = squareform(pdist(noisy_data))
+        _, w = MDS(distances, intrinsic_d)
+        plt.scatter(range(len(w)), w)
 
     plt.show()
 
@@ -286,10 +352,10 @@ if __name__ == '__main__':
     # SWISS_ROLL
     swiss_roll_data, swiss_roll_labels = datasets.samples_generator.make_swiss_roll(n_samples=5000)
     # FACES
-    with open("faces.pickle", 'rb') as f:
-        faces_data = pickle.load(f)
+    # with open("faces.pickle", 'rb') as f:
+    #     faces_data = pickle.load(f)
 
-    # MNIST(digits_data, digits_labels)
+    MNIST(digits_data, digits_labels)
     # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
     # Faces(faces_data)
     # scree(0)
