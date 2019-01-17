@@ -233,8 +233,8 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
     X = euclidean_distances(swiss_roll_data, squared=True)
 
     # PART I - MDS
-    # X_MDS = MDS(X, d)[0]
-    # points_display(X_MDS, swiss_roll_labels, "Swiss Rol - MDS", save, "inferno")
+    X_MDS = MDS(X, d)[0]
+    points_display(X_MDS, swiss_roll_labels, "Swiss Rol - MDS", save, "inferno")
 
     # PART II - LLE
     K = [5, 30, 100]
@@ -272,16 +272,16 @@ def Faces(faces_data):
     X = euclidean_distances(faces_data, squared=True)
 
     # PART I - MDS
-    # plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 70)
-    # plt.savefig("Faces - MDS")
-    # plt.show()
+    plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 70)
+    plt.savefig("Faces - MDS")
+    plt.show()
 
     # PART II - LLE
-    # K = [5, 10, 30, 50, 100]
-    # for k in range(len(K)):
-    #     plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE, K="+str(K[k]), 70)
-    #     plt.gray()
-    #     plt.show()
+    K = [5, 10, 30, 50, 100]
+    for k in range(len(K)):
+        plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE, K="+str(K[k]), 70)
+        plt.gray()
+        plt.show()
 
     # PART III - DM
     S = [40,50,65,70]
@@ -362,36 +362,5 @@ if __name__ == '__main__':
 
     # MNIST(digits_data, digits_labels)
     # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
-    Faces(faces_data)
+    # Faces(faces_data)
     # scree(0)
-
-    # pca = PCA(n_components=2)
-    # new = pca.fit_transform(digits_data)
-    # plt.figure()
-    # plt.scatter(new[:,0], new[:,1], c=digits_labels, cmap="gist_rainbow")
-    # plt.show()
-    exit(0)
-
-    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=5)
-    new = isomap.fit_transform(swiss_roll_data)
-    plt.figure()
-    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="viridis")
-    plt.show()
-    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=15)
-    new = isomap.fit_transform(swiss_roll_data)
-    plt.figure()
-    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="plasma")
-    plt.show()
-    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=50)
-    new = isomap.fit_transform(swiss_roll_data)
-    plt.figure()
-    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="inferno")
-    plt.show()
-    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=100)
-    new = isomap.fit_transform(swiss_roll_data)
-    plt.figure()
-    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="magma")
-    plt.show()
-    exit(0)
-    #
-    #
