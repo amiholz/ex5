@@ -2,12 +2,13 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import datasets
-
+from sklearn.decomposition import PCA
+from sklearn.manifold import Isomap, LocallyLinearEmbedding
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics.pairwise import euclidean_distances
 from scipy.spatial.distance import pdist, squareform
 
-save = False
+save = True
 
 def digits_example():
     '''
@@ -177,10 +178,10 @@ def DiffusionMap(X, d, sigma, t):
     reverse_eig_vec = np.flip(eig_vec,axis=1)[:,1:d+1]
     return reverse_eig_vec*np.power(reverse_eig_val, t)
 
-def points_display(data, labels, title, save=True):
+def points_display(data, labels, title, save=True, cmap = "gist_rainbow"):
     plt.figure()
     plt.title(title, fontsize=20)
-    plt.scatter(data[:,0], data[:,1], c=labels, cmap="gist_rainbow")
+    plt.scatter(data[:,0], data[:,1], c=labels, cmap=cmap)
     if save: plt.savefig(title)
     plt.show()
 
@@ -196,7 +197,7 @@ def MNIST(digits_data, digits_labels):
     points_display(X_MDS, digits_labels, "MNIST - MDS", save)
 
     # PART II - LLE
-    K = [5, 50, 100, 200]
+    K = [5, 10, 20, 50]
     LLE_title = "MNIST - LLE"
     plt.figure()
     plt.suptitle(LLE_title)
@@ -211,12 +212,12 @@ def MNIST(digits_data, digits_labels):
     plt.show()
 
     # PART III - DM
-    T = [1, 20, 100]
+    T = [1, 20, 50]
     DM_title = "MNIST - Diffusion Maps"
     plt.figure()
     plt.suptitle(DM_title, fontsize=15)
     for t in range(len(T)):
-        data = DiffusionMap(digits_data, d, 50, T[t])
+        data = DiffusionMap(digits_data, d, 10, T[t])
         plt.subplot(1, len(T),t+1)
         plt.title("t="+str(T[t])+" S=50" , fontsize=10)
         axis=np.min(data[:,0]),np.max(data[:,0]),np.min(data[:,1]),np.max(data[:,1])
@@ -233,10 +234,10 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
 
     # PART I - MDS
     X_MDS = MDS(X, d)[0]
-    points_display(X_MDS, swiss_roll_labels, "Swiss Rol - MDS", save)
+    points_display(X_MDS, swiss_roll_labels, "Swiss Rol - MDS", save, "inferno")
 
     # PART II - LLE
-    K = [5, 50, 100]
+    K = [5, 10, 30, 50, 100]
     LLE_title = "Swiss Rol - LLE"
     plt.figure()
     plt.suptitle(LLE_title)
@@ -246,7 +247,7 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
         plt.title("k="+str(K[k]) , fontsize=15)
         axis=np.min(data[:,0]),np.max(data[:,0]),np.min(data[:,1]),np.max(data[:,1])
         plt.axis(axis)
-        plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="gist_rainbow")
+        plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="inferno")
     if save: plt.savefig(LLE_title)
     plt.show()
 
@@ -260,7 +261,7 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
         plt.title("T=2"+" S="+str(S[s]) , fontsize=10)
         axis=np.min(data[:,0]),np.max(data[:,0]),np.min(data[:,1]),np.max(data[:,1])
         plt.axis(axis)
-        plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="gist_rainbow")
+        plt.scatter(data[:, 0], data[:, 1], c=swiss_roll_labels, cmap="inferno")
     if save: plt.savefig(DM_title)
     plt.show()
 
@@ -342,6 +343,8 @@ def scree(sd = 1):
     plt.show()
 
 if __name__ == '__main__':
+
+
     '''
     Preparation of the data
     '''
@@ -355,7 +358,38 @@ if __name__ == '__main__':
     # with open("faces.pickle", 'rb') as f:
     #     faces_data = pickle.load(f)
 
-    MNIST(digits_data, digits_labels)
-    # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
+    # MNIST(digits_data, digits_labels)
+    Swiss_Roll(swiss_roll_data, swiss_roll_labels)
     # Faces(faces_data)
     # scree(0)
+
+    # pca = PCA(n_components=2)
+    # new = pca.fit_transform(digits_data)
+    # plt.figure()
+    # plt.scatter(new[:,0], new[:,1], c=digits_labels, cmap="gist_rainbow")
+    # plt.show()
+    exit(0)
+
+    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=5)
+    new = isomap.fit_transform(swiss_roll_data)
+    plt.figure()
+    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="viridis")
+    plt.show()
+    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=15)
+    new = isomap.fit_transform(swiss_roll_data)
+    plt.figure()
+    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="plasma")
+    plt.show()
+    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=50)
+    new = isomap.fit_transform(swiss_roll_data)
+    plt.figure()
+    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="inferno")
+    plt.show()
+    isomap = LocallyLinearEmbedding(n_components=2, n_neighbors=100)
+    new = isomap.fit_transform(swiss_roll_data)
+    plt.figure()
+    plt.scatter(new[:,0], new[:,1], c=swiss_roll_labels, cmap="magma")
+    plt.show()
+    exit(0)
+    #
+    #
