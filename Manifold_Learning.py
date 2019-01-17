@@ -233,11 +233,11 @@ def Swiss_Roll(swiss_roll_data, swiss_roll_labels):
     X = euclidean_distances(swiss_roll_data, squared=True)
 
     # PART I - MDS
-    X_MDS = MDS(X, d)[0]
-    points_display(X_MDS, swiss_roll_labels, "Swiss Rol - MDS", save, "inferno")
+    # X_MDS = MDS(X, d)[0]
+    # points_display(X_MDS, swiss_roll_labels, "Swiss Rol - MDS", save, "inferno")
 
     # PART II - LLE
-    K = [5, 10, 30, 50, 100]
+    K = [5, 30, 100]
     LLE_title = "Swiss Rol - LLE"
     plt.figure()
     plt.suptitle(LLE_title)
@@ -272,24 +272,26 @@ def Faces(faces_data):
     X = euclidean_distances(faces_data, squared=True)
 
     # PART I - MDS
-    plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 70)
-    plt.show()
+    # plot_with_images(MDS(X, d)[0], faces_data, "Faces - MDS", 70)
+    # plt.savefig("Faces - MDS")
+    # plt.show()
 
     # PART II - LLE
-    K = [5, 50, 100]
-    for k in range(len(K)):
-        plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE", 70)
-    plt.gray()
-    plt.show()
+    # K = [5, 10, 30, 50, 100]
+    # for k in range(len(K)):
+    #     plot_with_images(LLE(X, d, K[k]), faces_data, "Faces - LLE, K="+str(K[k]), 70)
+    #     plt.gray()
+    #     plt.show()
 
     # PART III - DM
-    S = [40,70]
-    T = [2,20]
+    S = [40,50,65,70]
+    T = [1,2,4]
     for t in range(len(T)):
         for s in range(len(S)):
-            plot_with_images(DiffusionMap(X, d, S[s], T[t]), faces_data, "Faces - MDS", 50)
-    plt.gray()
-    plt.show()
+            plot_with_images(DiffusionMap(faces_data, d, S[s], T[t]), faces_data, "Faces - Diffusion Maps, S="+str(S[s])+"|T="+str(T[t]), 50)
+            plt.savefig("Faces - Diffusion Maps, S-"+str(S[s])+", T-"+str(T[t]))
+            plt.gray()
+            plt.show()
 
 def random_rotation_matrix(d, loc=0.0, scale=0.1):
     '''
@@ -355,12 +357,12 @@ if __name__ == '__main__':
     # SWISS_ROLL
     swiss_roll_data, swiss_roll_labels = datasets.samples_generator.make_swiss_roll(n_samples=5000)
     # FACES
-    # with open("faces.pickle", 'rb') as f:
-    #     faces_data = pickle.load(f)
+    with open("faces.pickle", 'rb') as f:
+        faces_data = pickle.load(f)
 
     # MNIST(digits_data, digits_labels)
-    Swiss_Roll(swiss_roll_data, swiss_roll_labels)
-    # Faces(faces_data)
+    # Swiss_Roll(swiss_roll_data, swiss_roll_labels)
+    Faces(faces_data)
     # scree(0)
 
     # pca = PCA(n_components=2)
